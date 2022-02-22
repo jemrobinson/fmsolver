@@ -3,9 +3,10 @@ import argparse
 from fmsolver import Team
 
 def main(input_file):
-    team = Team(input_file, min_score=2.5)
-    team.pick_first_team()
-    team.pick_second_team()
+    team = Team(input_file)
+    team.pick_first_team(min_score=3)
+    team.pick_second_team(min_score=1.5)
+    team.pick_third_team()
     team.summary()
 
 if __name__ == "__main__":
