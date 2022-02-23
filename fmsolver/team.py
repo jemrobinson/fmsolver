@@ -73,13 +73,13 @@ class Team():
                     continue
                 allowed_.append(idx)
             allowed.append(allowed_)
-        print(f"Considering {functools.reduce(lambda x, y: x * y, [len(a) for a in allowed])} possible permutations")
-        return allowed
+        n_combinations = functools.reduce(lambda x, y: x * y, [len(a) for a in allowed])
+        return (allowed, n_combinations)
 
     def pick_first_team(self, min_score=0.5, depth=99):
-        allowed = self.construct_allowlists(min_score=min_score, depth=depth)
+        (allowed, n_combinations) = self.construct_allowlists(min_score=min_score, depth=depth)
         best_score = self.penalty
-        for indices in tqdm.tqdm(itertools.product(*allowed)):
+        for indices in tqdm.tqdm(itertools.product(*allowed), total=n_combinations, desc="Picking first team"):
             score_ = self.score_team(indices, self.penalty)
             if score_ < best_score:
                 best_score = score_
@@ -90,9 +90,9 @@ class Team():
 
     def pick_second_team(self, min_score=0.0, depth=99):
         excluded_names = [p[1].name for p in self.get_names(self.teams[0])]
-        allowed = self.construct_allowlists(min_score=min_score, depth=depth, excluded_names=excluded_names)
+        (allowed, n_combinations) = self.construct_allowlists(min_score=min_score, depth=depth, excluded_names=excluded_names)
         best_score = self.penalty
-        for indices in tqdm.tqdm(itertools.product(*allowed)):
+        for indices in tqdm.tqdm(itertools.product(*allowed), total=n_combinations, desc="Picking second team"):
             score_ = self.score_team(indices, self.penalty)
             if score_ < best_score:
                 best_score = score_
@@ -103,9 +103,9 @@ class Team():
 
     def pick_third_team(self, depth=99):
         excluded_names = [p[1].name for idx in range(2) for p in self.get_names(self.teams[idx])]
-        allowed = self.construct_allowlists(min_score=0.0, depth=depth, excluded_names=excluded_names)
+        (allowed, n_combinations) = self.construct_allowlists(min_score=0.0, depth=depth, excluded_names=excluded_names)
         best_score = self.penalty
-        for indices in tqdm.tqdm(itertools.product(*allowed)):
+        for indices in tqdm.tqdm(itertools.product(*allowed), total=n_combinations, desc="Picking third team"):
             score_ = self.score_team(indices, self.penalty)
             if score_ < best_score:
                 best_score = score_
