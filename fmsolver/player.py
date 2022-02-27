@@ -4,4 +4,4 @@ class Player():
         self.score = score
 
     def __str__(self):
-        return f"{self.name} :: {self.score}"
+        return f"{self.name} ({self.score})"

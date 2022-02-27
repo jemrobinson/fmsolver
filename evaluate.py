@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 import argparse
-from fmsolver import Team
+from fmsolver import Squad
 
 def main(input_file, exclude):
-    team = Team(input_file, exclude)
-    team.pick_first_team(depth=5)
-    team.pick_second_team(min_score=1.5)
-    team.pick_third_team()
+    squad = Squad(input_file, exclude)
+    squad.pick_first_team(depth=5)
+    squad.pick_second_team()
+    squad.pick_third_team()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

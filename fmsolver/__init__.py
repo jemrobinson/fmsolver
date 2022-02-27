@@ -1,5 +1,5 @@
-from .team import Team
+from .squad import Squad
 
 __all__ = [
-    "Team",
+    "Squad",
 ]
