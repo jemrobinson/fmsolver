@@ -8,7 +8,7 @@ from .position import Position
 class Team():
     penalty = 9999
 
-    def __init__(self, filename, min_score=0.0):
+    def __init__(self, filename, exclude=[], min_score=0.0):
         with open(filename) as f_input:
             raw_data = yaml.safe_load(f_input)
 
@@ -18,6 +18,8 @@ class Team():
         for position in self.positions:
             for entry in raw_data[position.name]:
                 name, score = list(entry.keys())[0], list(entry.values())[0]
+                if name in exclude:
+                    continue
                 if score >= min_score:
                     position.players.append(Player(name, score))
             position.players.append(Player(f"[No {position.name}]", 0.0))
@@ -44,14 +46,6 @@ class Team():
             team.append((position, player))
         return team
 
-    def summary(self):
-        print("** First team **")
-        self.summarise_team(0)
-        print("** Second team **")
-        self.summarise_team(1)
-        print("** Third team **")
-        self.summarise_team(2)
-
     def summarise_team(self, team):
         total_score, max_score = 0, 0
         for position, player in self.get_names(self.teams[team]):
@@ -60,7 +54,7 @@ class Team():
             max_score += position.max_score
         print(f"Score {total_score} / {max_score}")
 
-    def construct_allowlists(self, min_score=0.0, depth=99, excluded_names=[]):
+    def construct_allowlists(self, min_score, depth, excluded_names):
         allowed = []
         for position in self.positions:
             allowed_ = []
@@ -77,39 +71,39 @@ class Team():
         return (allowed, n_combinations)
 
     def pick_first_team(self, min_score=0.5, depth=99):
-        (allowed, n_combinations) = self.construct_allowlists(min_score=min_score, depth=depth)
+        (allowed, n_combinations) = self.construct_allowlists(min_score, depth, [])
         best_score = self.penalty
         for indices in tqdm.tqdm(itertools.product(*allowed), total=n_combinations, desc="Picking first team"):
             score_ = self.score_team(indices, self.penalty)
             if score_ < best_score:
                 best_score = score_
-                # print(f"New best first team! {[position.player(idx).name for idx, position in zip(indices, self.positions)]}")
                 self.teams[0] = indices
                 if best_score == 0:
                     break
+        self.summarise_team(0)
 
     def pick_second_team(self, min_score=0.0, depth=99):
         excluded_names = [p[1].name for p in self.get_names(self.teams[0])]
-        (allowed, n_combinations) = self.construct_allowlists(min_score=min_score, depth=depth, excluded_names=excluded_names)
+        (allowed, n_combinations) = self.construct_allowlists(min_score, depth, excluded_names)
         best_score = self.penalty
         for indices in tqdm.tqdm(itertools.product(*allowed), total=n_combinations, desc="Picking second team"):
             score_ = self.score_team(indices, self.penalty)
             if score_ < best_score:
                 best_score = score_
-                # print(f"New best second team! {[position.player(idx).name for idx, position in zip(indices, self.positions)]}")
                 self.teams[1] = indices
                 if best_score == 0:
                     break
+        self.summarise_team(1)
 
-    def pick_third_team(self, depth=99):
+    def pick_third_team(self, min_score=0.0, depth=99):
         excluded_names = [p[1].name for idx in range(2) for p in self.get_names(self.teams[idx])]
-        (allowed, n_combinations) = self.construct_allowlists(min_score=0.0, depth=depth, excluded_names=excluded_names)
+        (allowed, n_combinations) = self.construct_allowlists(min_score, depth, excluded_names)
         best_score = self.penalty
         for indices in tqdm.tqdm(itertools.product(*allowed), total=n_combinations, desc="Picking third team"):
             score_ = self.score_team(indices, self.penalty)
             if score_ < best_score:
                 best_score = score_
-                # print(f"New best third team! {[position.player(idx).name for idx, position in zip(indices, self.positions)]}")
                 self.teams[2] = indices
                 if best_score == 0:
                     break
+        self.summarise_team(2)
