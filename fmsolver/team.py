@@ -27,7 +27,7 @@ class Team():
             print(f"... {position.name:<3} {player.name:<15} {player.score:.1f}")
             total_score += player.score
             max_score += position.max_score
-        print(f"Score {total_score} / {max_score}")
+        print(f"Score {total_score:.1f} / {max_score:.1f}")
 
     def __str__(self):
         return "; ".join([str(p) for p in self.players])

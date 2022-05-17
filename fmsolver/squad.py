@@ -86,3 +86,14 @@ class Squad():
             self.teams[2] = self.__pick_team(permutations)
         if self.teams[2]:
             self.teams[2].summarise(self.positions)
+
+    def list_others(self, min_score=0.0, depth=99):
+        remaining_names = set()
+        excluded_names = sum([self.teams[idx].names for idx in range(3) if self.teams[idx]], [])
+        for position in self.positions:
+            for player in position.players:
+                if player.name not in excluded_names and player.score > 0.0:
+                    remaining_names.add(player.name)
+        print("Remaining players:")
+        for name in sorted(remaining_names):
+            print(f"... {name}")
