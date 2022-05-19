@@ -1,5 +1,5 @@
 class Position():
-    def __init__(self, idx, name):
+    def __init__(self, idx: int, name: str):
         self.number = idx
         self.name = name
         self.players = []

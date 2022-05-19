@@ -15,8 +15,7 @@ class Team():
 
     def is_valid(self):
         # Check for non-repeating names.
-        # For speed, we do not explicitly check that exactly 11 names were passed
-        return len(set(self.names)) == 11
+        return len(set(self.names)) == len(self.names)
 
     def loss_function(self, max_scores):
         return sum([(max_score - score) for score, max_score in zip(self.scores, max_scores)])
