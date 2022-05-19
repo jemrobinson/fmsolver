@@ -7,14 +7,20 @@ from .player import Player
 from .position import Position
 from .team import Team
 
-class Squad():
+
+class Squad:
     penalty = 9999
 
     def __init__(self, filename, exclude=[], n_subs=0, min_score=0.0):
         with open(filename) as f_input:
             raw_data = yaml.safe_load(f_input)
 
-        self.positions = [Position(idx, name) for idx, name in enumerate(raw_data.keys())]
+        self.positions = [
+            Position(idx, name)
+            for idx, name in enumerate(
+                [k for k in raw_data.keys() if k != "substitutes"]
+            )
+        ]
         self.substitutes = []
         self.excluded_names = []
         self.teams = {}
@@ -28,19 +34,19 @@ class Squad():
                     position.players.append(Player(name, score))
             position.players.append(Player(f"[No {position.name}]", 0.0))
 
-        if n_subs == 7:
-            for idx, position_names in enumerate([["GK"], ["DC"], ["DL", "DR"], ["MC"], ["AMC"], ["AML", "AMR"], ["STC"]]):
-                self.substitutes.append(Position(idx, f"S{idx+1}"))
-                meta_players = {}
-                for position_name in position_names:
-                    for position in self.positions:
-                        if position.name.startswith(position_name):
-                            for player in position.players:
-                                if player.name not in meta_players:
-                                    meta_players[player.name] = 0
-                                meta_players[player.name] += player.score
-                for name, score in meta_players.items():
-                    self.substitutes[-1].players.append(Player(name, score))
+        for idx, position_data in enumerate(raw_data["substitutes"]):
+            (substitute_name, position_names) = list(position_data.items())[0]
+            self.substitutes.append(Position(idx, substitute_name))
+            meta_players = {}
+            for position_name in position_names:
+                for position in self.positions:
+                    if position.name.startswith(position_name):
+                        for player in position.players:
+                            if player.name not in meta_players:
+                                meta_players[player.name] = 0
+                            meta_players[player.name] += player.score
+            for name, score in meta_players.items():
+                self.substitutes[-1].players.append(Player(name, score))
 
     def construct_candidate_teams(self, min_score, depth, excluded_names):
         allowed = []
@@ -89,21 +95,32 @@ class Squad():
         return best_team
 
     def __pick_named_team(self, name, min_score, depth):
-        (allowed, n_permutations) = self.construct_candidate_teams(min_score, depth, self.excluded_names)
-        permutations = tqdm.tqdm(itertools.product(*allowed), total=n_permutations, desc=f"Picking {name} team")
+        (allowed, n_permutations) = self.construct_candidate_teams(
+            min_score, depth, self.excluded_names
+        )
+        permutations = tqdm.tqdm(
+            itertools.product(*allowed),
+            total=n_permutations,
+            desc=f"Picking {name} team",
+        )
         team = self.__pick_permutation(permutations)
         team.summarise(self.positions)
         self.excluded_names += team.names
         return team
-
 
     def pick_first_team(self, min_score=0.5, depth=99):
         self.teams["first"] = self.__pick_named_team("first", min_score, depth)
         # self.excluded_names += self.teams["first"].names
 
     def pick_substitutes(self, min_score=0.0, depth=99):
-        (allowed, n_permutations) = self.construct_candidate_subs(min_score, depth, self.excluded_names)
-        permutations = tqdm.tqdm(itertools.product(*allowed), total=n_permutations, desc="Picking substitutes")
+        (allowed, n_permutations) = self.construct_candidate_subs(
+            min_score, depth, self.excluded_names
+        )
+        permutations = tqdm.tqdm(
+            itertools.product(*allowed),
+            total=n_permutations,
+            desc="Picking substitutes",
+        )
         self.teams["subs"] = self.__pick_permutation(permutations)
         self.teams["subs"].summarise(self.substitutes)
 
@@ -111,15 +128,20 @@ class Squad():
         self.teams["second"] = self.__pick_named_team("second", min_score, depth)
         # self.excluded_names += self.teams["second"].names
 
-
     def pick_third_team(self, min_score=0.0, depth=99):
         self.teams["third"] = self.__pick_named_team("third", min_score, depth)
         # self.excluded_names += self.teams["third"].names
 
-
     def list_others(self, min_score=0.0, depth=99):
         remaining_names = set()
-        excluded_names = sum([self.teams[name].names for name in ["first", "second", "third"] if self.teams[name]], [])
+        excluded_names = sum(
+            [
+                self.teams[name].names
+                for name in ["first", "second", "third"]
+                if self.teams[name]
+            ],
+            [],
+        )
         for position in self.positions:
             for player in position.players:
                 if player.name not in excluded_names and player.score > 0.0:
