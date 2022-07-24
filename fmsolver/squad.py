@@ -11,7 +11,7 @@ from .team import Team
 class Squad:
     penalty = 9999
 
-    def __init__(self, filename, exclude=[], n_subs=0, min_score=0.0):
+    def __init__(self, filename, exclude=[], min_score=0.0):
         with open(filename) as f_input:
             raw_data = yaml.safe_load(f_input)
 
@@ -48,18 +48,12 @@ class Squad:
             for name, score in meta_players.items():
                 self.substitutes[-1].players.append(Player(name, score))
 
-    def construct_candidate_teams(self, min_score, depth, excluded_names):
+    def construct_candidate_teams(self):
         allowed = []
         for position in self.positions:
-            allowed_in_position = []
-            for player in position.players:
-                if len(allowed_in_position) >= depth:
-                    continue
-                if player.score < min_score:
-                    continue
-                if player.name in excluded_names:
-                    continue
-                allowed_in_position.append(player)
+            allowed_in_position = [
+                p for p in position.players if p.name not in self.excluded_names
+            ]
             allowed.append(
                 sorted(allowed_in_position, key=lambda p: p.score, reverse=True)
             )
@@ -72,18 +66,12 @@ class Squad:
             allowed = self.reduce_combinations(allowed)
         return (allowed, n_permutations)
 
-    def construct_candidate_subs(self, min_score, depth, excluded_names):
+    def construct_candidate_subs(self):
         allowed = []
         for substitute in self.substitutes:
-            allowed_in_position = []
-            for player in substitute.players:
-                if len(allowed_in_position) >= depth:
-                    continue
-                if player.score < min_score:
-                    continue
-                if player.name in excluded_names:
-                    continue
-                allowed_in_position.append(player)
+            allowed_in_position = [
+                p for p in substitute.players if p.name not in self.excluded_names
+            ]
             allowed.append(
                 sorted(allowed_in_position, key=lambda p: p.score, reverse=True)
             )
@@ -108,10 +96,8 @@ class Squad:
                         break
         return best_team
 
-    def __pick_named_team(self, name, min_score, depth):
-        (allowed, n_permutations) = self.construct_candidate_teams(
-            min_score, depth, self.excluded_names
-        )
+    def __pick_named_team(self, name):
+        (allowed, n_permutations) = self.construct_candidate_teams()
         permutations = tqdm.tqdm(
             itertools.product(*allowed),
             total=n_permutations,
@@ -122,13 +108,11 @@ class Squad:
         self.excluded_names += team.names
         return team
 
-    def pick_first_team(self, min_score=0.5, depth=99):
-        self.teams["first"] = self.__pick_named_team("first", min_score, depth)
+    def pick_first_team(self):
+        self.teams["first"] = self.__pick_named_team("first")
 
-    def pick_substitutes(self, min_score=0.0, depth=99):
-        (allowed, n_permutations) = self.construct_candidate_subs(
-            min_score, depth, self.excluded_names
-        )
+    def pick_substitutes(self):
+        (allowed, n_permutations) = self.construct_candidate_subs()
         permutations = tqdm.tqdm(
             itertools.product(*allowed),
             total=n_permutations,
@@ -137,11 +121,11 @@ class Squad:
         self.teams["subs"] = self.__pick_permutation(permutations)
         self.teams["subs"].summarise(self.substitutes)
 
-    def pick_second_team(self, min_score=0.0, depth=99):
-        self.teams["second"] = self.__pick_named_team("second", min_score, depth)
+    def pick_second_team(self):
+        self.teams["second"] = self.__pick_named_team("second")
 
-    def pick_third_team(self, min_score=0.0, depth=99):
-        self.teams["third"] = self.__pick_named_team("third", min_score, depth)
+    def pick_third_team(self):
+        self.teams["third"] = self.__pick_named_team("third")
 
     def list_others(self):
         remaining_names = set()
