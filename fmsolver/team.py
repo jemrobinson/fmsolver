@@ -1,7 +1,7 @@
 from multiprocessing.sharedctypes import Value
 
 
-class Team():
+class Team:
     def __init__(self, players=[]):
         self.players = players
 
@@ -18,7 +18,9 @@ class Team():
         return len(set(self.names)) == len(self.names)
 
     def loss_function(self, max_scores):
-        return sum([(max_score - score) for score, max_score in zip(self.scores, max_scores)])
+        return sum(
+            [(max_score - score) for score, max_score in zip(self.scores, max_scores)]
+        )
 
     def summarise(self, positions):
         total_score, max_score = 0, 0
@@ -30,3 +32,6 @@ class Team():
 
     def __str__(self):
         return "; ".join([str(p) for p in self.players])
+
+    def __repr__(self):
+        return f"({id(self)}: {self.__str__()})"

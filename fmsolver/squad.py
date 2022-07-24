@@ -60,8 +60,16 @@ class Squad:
                 if player.name in excluded_names:
                     continue
                 allowed_in_position.append(player)
-            allowed.append(allowed_in_position)
-        n_permutations = functools.reduce(lambda x, y: x * y, [len(a) for a in allowed])
+            allowed.append(
+                sorted(allowed_in_position, key=lambda p: p.score, reverse=True)
+            )
+        while True:
+            n_permutations = functools.reduce(
+                lambda x, y: x * y, [len(a) for a in allowed]
+            )
+            if n_permutations <= 150 * 400000:
+                break
+            allowed = self.reduce_combinations(allowed)
         return (allowed, n_permutations)
 
     def construct_candidate_subs(self, min_score, depth, excluded_names):
@@ -76,9 +84,15 @@ class Squad:
                 if player.name in excluded_names:
                     continue
                 allowed_in_position.append(player)
-            allowed.append(allowed_in_position)
+            allowed.append(
+                sorted(allowed_in_position, key=lambda p: p.score, reverse=True)
+            )
         n_permutations = functools.reduce(lambda x, y: x * y, [len(a) for a in allowed])
         return (allowed, n_permutations)
+
+    def reduce_combinations(self, allowed):
+        limit = max([len(position) for position in allowed]) - 1
+        return [position[:limit] for position in allowed]
 
     def __pick_permutation(self, permutations):
         best_score, best_team = self.penalty, Team([])
@@ -110,7 +124,6 @@ class Squad:
 
     def pick_first_team(self, min_score=0.5, depth=99):
         self.teams["first"] = self.__pick_named_team("first", min_score, depth)
-        # self.excluded_names += self.teams["first"].names
 
     def pick_substitutes(self, min_score=0.0, depth=99):
         (allowed, n_permutations) = self.construct_candidate_subs(
@@ -126,22 +139,13 @@ class Squad:
 
     def pick_second_team(self, min_score=0.0, depth=99):
         self.teams["second"] = self.__pick_named_team("second", min_score, depth)
-        # self.excluded_names += self.teams["second"].names
 
     def pick_third_team(self, min_score=0.0, depth=99):
         self.teams["third"] = self.__pick_named_team("third", min_score, depth)
-        # self.excluded_names += self.teams["third"].names
 
-    def list_others(self, min_score=0.0, depth=99):
+    def list_others(self):
         remaining_names = set()
-        excluded_names = sum(
-            [
-                self.teams[name].names
-                for name in ["first", "second", "third"]
-                if self.teams[name]
-            ],
-            [],
-        )
+        excluded_names = sum([team.names for team in self.teams.values()], [])
         for position in self.positions:
             for player in position.players:
                 if player.name not in excluded_names and player.score > 0.0:
