@@ -25,7 +25,7 @@ class Team:
     def summarise(self, positions):
         total_score, max_score = 0, 0
         for player, position in zip(self.players, positions):
-            print(f"... {position.name:<3} {player.name:<15} {player.score:.1f}")
+            print(f"... {position.name:<15} {player.name:<15} {player.score:.1f}")
             total_score += player.score
             max_score += position.max_score
         print(f"Score {total_score:.1f} / {max_score:.1f}")

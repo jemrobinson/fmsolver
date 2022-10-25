@@ -9,8 +9,6 @@ from .team import Team
 
 
 class Squad:
-    penalty = 9999
-
     def __init__(self, filename, exclude=[], min_score=0.0):
         with open(filename) as f_input:
             raw_data = yaml.safe_load(f_input)
@@ -32,7 +30,8 @@ class Squad:
                     continue
                 if score >= min_score:
                     position.players.append(Player(name, score))
-            position.players.append(Player(f"[No {position.name}]", 0.0))
+            for _ in range(3):
+                position.players.append(Player(f"[No {position.name}]", 0.0))
 
         for idx, position_data in enumerate(raw_data["substitutes"]):
             (substitute_name, position_names) = list(position_data.items())[0]
@@ -40,7 +39,7 @@ class Squad:
             meta_players = {}
             for position_name in position_names:
                 for position in self.positions:
-                    if position.name.startswith(position_name):
+                    if position.name.startswith(f"{position_name}_"):
                         for player in position.players:
                             if player.name not in meta_players:
                                 meta_players[player.name] = 0
@@ -57,14 +56,7 @@ class Squad:
             allowed.append(
                 sorted(allowed_in_position, key=lambda p: p.score, reverse=True)
             )
-        while True:
-            n_permutations = functools.reduce(
-                lambda x, y: x * y, [len(a) for a in allowed]
-            )
-            if n_permutations <= 150 * 400000:
-                break
-            allowed = self.reduce_combinations(allowed)
-        return (allowed, n_permutations)
+        return self.reduced_combinations(allowed)
 
     def construct_candidate_subs(self):
         allowed = []
@@ -75,15 +67,18 @@ class Squad:
             allowed.append(
                 sorted(allowed_in_position, key=lambda p: p.score, reverse=True)
             )
-        n_permutations = functools.reduce(lambda x, y: x * y, [len(a) for a in allowed])
-        return (allowed, n_permutations)
+        return self.reduced_combinations(allowed)
 
-    def reduce_combinations(self, allowed):
-        limit = max([len(position) for position in allowed]) - 1
-        return [position[:limit] for position in allowed]
+    def reduced_combinations(self, allowed, max_combinations=25000000):
+        def get_permutations(player_list):
+            return functools.reduce(lambda x, y: x * y, [len(a) for a in player_list])
+        while get_permutations(allowed) > max_combinations:
+            limit = max([len(position) for position in allowed]) - 1
+            allowed = [position[:limit] for position in allowed]
+        return (allowed, get_permutations(allowed))
 
     def __pick_permutation(self, permutations):
-        best_score, best_team = self.penalty, Team([])
+        best_score, best_team = 9999, Team([])
         max_scores = [position.max_score for position in self.positions]
         for permutation in permutations:
             team = Team(permutation)
