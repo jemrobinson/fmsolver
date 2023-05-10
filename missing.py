@@ -2,7 +2,7 @@
 import argparse
 
 
-def main(xml_input, rtf_input, rtf_output):
+def main(xml_input: str, rtf_input: str, rtf_output: str) -> None:
     existing_uids = set()
     face_ids = set()
     output_lines = []
@@ -27,7 +27,7 @@ def main(xml_input, rtf_input, rtf_output):
     print(f"Found {n_path_errors} incorrect image paths")
 
     if n_path_errors:
-        xml_output_path = f"{xml_input}.fixed"
+        xml_output_path = xml_input.replace(".xml", ".fixed.xml")
         with open(xml_output_path, "w", newline="\r\n") as f_xml_out:
             for line in output_lines:
                 f_xml_out.write(line)
@@ -65,8 +65,10 @@ def main(xml_input, rtf_input, rtf_output):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--xml", help="Input XML file")
-    parser.add_argument("--rtf", help="Input RTF file")
+    parser.add_argument("--rtf", help="Input RTF file", required=True)
+    parser.add_argument("--xml", help="Input XML file", required=True)
     parser.add_argument("--out", help="Output RTF file")
     args = parser.parse_args()
+    if not args.out:
+        args.out = args.rtf.replace(".rtf", ".missing.rtf")
     main(args.xml, args.rtf, args.out)
