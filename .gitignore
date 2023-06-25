@@ -3,3 +3,4 @@ __pycache__
 *.log
 *.yaml
 .vscode
+*.DS_Store

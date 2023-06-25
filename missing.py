@@ -1,17 +1,31 @@
 #! /usr/bin/env python
 import argparse
+from typing import Optional
 
-
-def main(xml_input: str, rtf_input: str, rtf_output: str) -> None:
-    existing_uids = set()
+def main(xml_input: str, rtf_input: str, rtf_output: str, xml_players: Optional[str] = None) -> None:
+    real_uids = set()
+    if xml_players:
+        with open(xml_players, "r") as f_xml:
+            for line in f_xml.readlines():
+                output_line = line
+                if line.strip().startswith("<record from="):
+                    uid = int(line.split(" ")[-1].split("/")[3])
+                    real_uids.add(uid)
+        print(f"Loaded {len(real_uids)} real players")
+    existing_uids = set(real_uids)
     face_ids = set()
     output_lines = []
-    n_duplicate_faces, n_path_errors = 0, 0
+    n_duplicate_faces, n_real_players, n_path_errors = 0, 0, 0
     try:
         with open(xml_input, "r") as f_xml:
             for line in f_xml.readlines():
                 output_line = line
-                if line.startswith("<record from="):
+                if line.strip().startswith("<record from="):
+                    uid = int(line.split(" ")[-1].split("/")[3])
+                    existing_uids.add(uid)
+                    if uid in real_uids:
+                        n_real_players += 1
+                        continue
                     category, face_id = line.split('"')[1].split("/")
                     if not face_id.startswith(category):
                         n_path_errors += 1
@@ -23,10 +37,9 @@ def main(xml_input: str, rtf_input: str, rtf_output: str) -> None:
                     if face_id in face_ids:
                         n_duplicate_faces += 1
                     face_ids.add(face_id)
-                    uid = int(line.split(" ")[-1].split("/")[3])
-                    existing_uids.add(uid)
                 output_lines.append(output_line)
         print(f"Loaded {len(existing_uids)} players from XML")
+        print(f"Found {n_real_players} incorrectly included real players")
         print(f"Found {n_duplicate_faces} duplicated faces")
         print(f"Found {n_path_errors} incorrect image paths")
 
@@ -73,8 +86,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rtf", help="Input RTF file", required=True)
     parser.add_argument("--xml", help="Input XML file", required=True)
-    parser.add_argument("--out", help="Output RTF file")
+    parser.add_argument("--out", help="Output RTF file", required=False)
+    parser.add_argument("--players", help="Input XML file of real players", default=None, required=False)
     args = parser.parse_args()
     if not args.out:
         args.out = args.rtf.replace(".rtf", ".missing.rtf")
-    main(args.xml, args.rtf, args.out)
+    main(args.xml, args.rtf, args.out, args.players)
