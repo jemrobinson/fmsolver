@@ -72,6 +72,7 @@ class Squad:
     def reduced_combinations(self, allowed, max_combinations=30000000):
         def get_permutations(player_list):
             return functools.reduce(lambda x, y: x * y, [len(a) for a in player_list])
+
         while get_permutations(allowed) > max_combinations:
             limit = max([len(position) for position in allowed]) - 1
             allowed = [position[:limit] for position in allowed]

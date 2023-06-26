@@ -8,6 +8,8 @@ authors = ["James Robinson <james.em.robinson@gmail.com>"]
 python = ">=3.9,<3.11"
 PyYAML = "^6.0"
 tqdm = "^4.62.3"
+beautifulsoup4 = "^4.12.2"
+requests = "^2.31.0"
 
 [tool.poetry.dev-dependencies]
 

@@ -4,3 +4,4 @@ __pycache__
 *.yaml
 .vscode
 *.DS_Store
+*.sh

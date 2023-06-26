@@ -2,7 +2,10 @@
 import argparse
 from typing import Optional
 
-def main(xml_input: str, rtf_input: str, rtf_output: str, xml_players: Optional[str] = None) -> None:
+
+def main(
+    xml_input: str, rtf_input: str, rtf_output: str, xml_players: Optional[str] = None
+) -> None:
     real_uids = set()
     if xml_players:
         with open(xml_players, "r") as f_xml:
@@ -29,11 +32,18 @@ def main(xml_input: str, rtf_input: str, rtf_output: str, xml_players: Optional[
                     category, face_id = line.split('"')[1].split("/")
                     if not face_id.startswith(category):
                         n_path_errors += 1
-                        face_category = "".join([char for char in face_id if not char.isdigit()])
-                        output_line = output_line.replace(f"{category}/{face_category}", f"{face_category}/{face_category}")
-                    if "ItalMed/ItalMed" in line:
+                        face_category = "".join(
+                            [char for char in face_id if not char.isdigit()]
+                        )
+                        output_line = output_line.replace(
+                            f"{category}/{face_category}",
+                            f"{face_category}/{face_category}",
+                        )
+                    if "Italmed/ItalMed" in output_line:
                         n_path_errors += 1
-                        output_line = output_line.replace("ItalMed/ItalMed", "Italmed/ItalMed")
+                        output_line = output_line.replace(
+                            "Italmed/ItalMed", "ItalMed/ItalMed"
+                        )
                     if face_id in face_ids:
                         n_duplicate_faces += 1
                     face_ids.add(face_id)
@@ -87,7 +97,9 @@ if __name__ == "__main__":
     parser.add_argument("--rtf", help="Input RTF file", required=True)
     parser.add_argument("--xml", help="Input XML file", required=True)
     parser.add_argument("--out", help="Output RTF file", required=False)
-    parser.add_argument("--players", help="Input XML file of real players", default=None, required=False)
+    parser.add_argument(
+        "--players", help="Input XML file of real players", default=None, required=False
+    )
     args = parser.parse_args()
     if not args.out:
         args.out = args.rtf.replace(".rtf", ".missing.rtf")
