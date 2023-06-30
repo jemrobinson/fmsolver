@@ -14,7 +14,7 @@ def main(
                 if line.strip().startswith("<record from="):
                     uid = int(line.split(" ")[-1].split("/")[3])
                     real_uids.add(uid)
-        print(f"Loaded {len(real_uids)} real players")
+        print(f"Loaded {len(real_uids)} real players from XML")
     existing_uids = set(real_uids)
     face_ids = set()
     output_lines = []
