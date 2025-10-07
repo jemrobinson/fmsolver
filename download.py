@@ -18,35 +18,44 @@ def main(
             for line in f_xml_in.readlines():
                 if line.strip().startswith("<record from"):
                     existing_uids.add(int(line.split("/")[-3]))
-    print(f"There are {len(existing_uids)} existing players")
+    print(f"There are {len(existing_uids)} players with existing faces")
 
     # Identify players
     downloadable_uids = set()
+    n_total, n_existing = 0, 0
     with open(pathlib.Path(rtf_input), "r") as f_rtf_in:
         # Data is: uid, nationality, second_nationality, name, hair_length, hair_colour, skin_tone
         for line in f_rtf_in.readlines():
             if line.startswith("| -"):
                 continue
             try:
+                n_total += 1
                 uid = int(line.split("|")[1].strip())
-                if uid not in existing_uids:
+                if uid in existing_uids:
+                    n_existing += 1
+                else:
                     downloadable_uids.add(uid)
             except (IndexError, ValueError):
                 pass
-    print(f"There are {len(downloadable_uids)} new players to check")
+    print(f"There are {n_total} players in the RTF file")
+    print(f"... {n_existing} players with existing faces")
+    print(f"... {len(downloadable_uids)} new players to check")
 
     # Download images
     target_folder = pathlib.Path(target_folder).resolve()
     os.makedirs(target_folder, exist_ok=True)
     n_downloaded, n_non_existent, n_no_image = 0, 0, 0
-    for idx, uid in enumerate(sorted(downloadable_uids), start=1):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+    }
+    for idx, uid in enumerate(sorted(downloadable_uids)):
         try:
             if idx % 100 == 0:
                 print(
                     f"Working on player {idx}/{len(downloadable_uids)}: downloaded {n_downloaded}, no face data {n_no_image}, non-existent {n_non_existent}."
                 )
             # Look for player
-            r_search = requests.get(f"https://sortitoutsi.net/search/database?search={uid}&type=person")
+            r_search = requests.get(f"https://sortitoutsi.net/search/database?search={uid}&type=person", headers=headers)
             s_search = BeautifulSoup(r_search.content, "html.parser")
             if not [link for link in s_search.find_all("a") if "football-manager-2021/person" in str(link)]:
                 # UID {uid} does not exist in FM21
