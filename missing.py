@@ -48,12 +48,12 @@ def main(
                         n_duplicate_faces += 1
                     face_ids.add(face_id)
                 output_lines.append(output_line)
-        print(f"Loaded {len(existing_uids)} players from XML")
+        print(f"Loaded {len(existing_uids)} newgen players from XML")
         print(f"Found {n_real_players} incorrectly included real players")
         print(f"Found {n_duplicate_faces} duplicated faces")
         print(f"Found {n_path_errors} incorrect image paths")
 
-        if n_path_errors:
+        if n_real_players or n_path_errors:
             xml_output_path = xml_input.replace(".xml", ".fixed.xml")
             with open(xml_output_path, "w", newline="\r\n") as f_xml_out:
                 for line in output_lines:
